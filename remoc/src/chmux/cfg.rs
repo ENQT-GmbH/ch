@@ -2,6 +2,8 @@
 
 use std::time::Duration;
 
+use crate::rch;
+
 use super::msg::MAX_MSG_LENGTH;
 
 /// Behavior when ports are exhausted and a connect is requested.
@@ -68,9 +70,14 @@ pub struct Cfg {
     /// This must be at least 4 bytes.
     /// This must not exceed 2^32 - 16 = 4294967279.
     pub chunk_size: u32,
+    /// Maximum size of a single item transmitted in bytes.
+    ///
+    /// By default this is 16 MB (defined in [rch::DEFAULT_MAX_ITEM_SIZE]).
+    /// An error was threw if a request size exceeds this value.
+    pub max_item_size: usize,
     /// Size of receive buffer of each port in bytes.
     ///
-    /// This controls the maximum amout of in-flight data per port, that is data on the transport
+    /// This controls the maximum amount of in-flight data per port, that is data on the transport
     /// plus received but yet unprocessed data.
     ///
     /// Increase this value if the throughput (bytes per second) is significantly
@@ -132,6 +139,7 @@ impl Default for Cfg {
             max_data_size: 524_288,
             max_received_ports: 128,
             chunk_size: 16_384,
+            max_item_size: rch::DEFAULT_MAX_ITEM_SIZE,
             receive_buffer: 524_288,
             shared_send_queue: 16,
             transport_send_queue: 16,

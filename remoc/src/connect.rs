@@ -212,6 +212,7 @@ impl<'transport, TransportSinkError, TransportStreamError>
         Rx: RemoteSend,
         Codec: codec::Codec,
     {
+        let max_item_size = cfg.max_item_size;
         let (mux, client, mut listener) = ChMux::new(cfg, transport_sink, transport_stream).await?;
         let mut connection = Self(mux.run().boxed());
 
@@ -220,7 +221,11 @@ impl<'transport, TransportSinkError, TransportStreamError>
             Err(err) = &mut connection => Err(err.into()),
             result = base::connect(&client, &mut listener) => {
                 match result {
-                    Ok((tx, rx)) => Ok((connection, tx, rx)),
+                    Ok((mut tx, mut rx)) => {
+                        tx.set_max_item_size(max_item_size);
+                        rx.set_max_item_size(max_item_size);
+                        Ok((connection, tx, rx))
+                    },
                     Err(err) => Err(err.into()),
                 }
             }
